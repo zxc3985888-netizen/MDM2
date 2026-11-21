@@ -1,1 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="國軍 MDM V9.1" />
+  <title>國軍 MDM V9.1</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --green-bg: #28cc00;
+      --yellow-bg: #f6f600;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Heiti TC", sans-serif;
+      background: #000;
+      overflow: hidden;
+    }
+    .screen {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .screen.active { display: flex; }
+
+    /* 底圖設定：請確認檔名與上傳到專案根目錄的檔案完全一致 */
+    .screenshot-screen {
+      position: relative;
+      background-color: var(--green-bg);
+      background-image: url("./IMG_0179.jpeg?v=179");
+      background-size: 100% 100%;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* 全透明背景直接疊加即時民國時間 */
+    .clock-overlay {
+      position: absolute;
+      left: 50%;
+      top: 52.0%;
+      transform: translate(-50%, -50%);
+      padding: 0;
+      text-align: center;
+      font-size: 29px;
+      font-weight: 800;
+      color: #0c140a;
+      -webkit-text-stroke: 0.45px #0c140a;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      background: transparent;
+      z-index: 5;
+    }
+
+    /* 透明點擊熱區：左上選單按鈕（修改身分證字號） */
+    .hotspot-menu {
+      position: absolute;
+      left: 2%;
+      top: 1.5%;
+      width: 16%;
+      height: 8%;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      z-index: 6;
+    }
+
+    /* 透明點擊熱區：白色管制標籤（開啟進出營區選單） */
+    .hotspot-label {
+      position: absolute;
+      left: 13%;
+      top: 70%;
+      width: 74%;
+      height: 16.5%;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      z-index: 6;
+    }
+
+    .yellow-screen { background: var(--yellow-bg); }
+
+    .topbar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a0a;
+      color: #f3f3f3;
+      height: 56px;
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      flex-shrink: 0;
+    }
+    .back-pill-btn {
+      position: absolute;
+      left: 14px;
+      background: #2a2a2a;
+      color: #f5f5f5;
+      border: 1px solid #444444;
+      border-radius: 16px;
+      padding: 6px 13px;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.22);
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      z-index: 30;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      width: 100%;
+      background: rgba(132, 236, 94, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #12220e;
+      margin-bottom: 2px;
+    }
+    .modal-sub {
+      font-size: 13.5px;
+      color: #182b13;
+      margin-bottom: 14px;
+    }
+    .modal-btn {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.32);
+      border: none;
+      border-radius: 10px;
+      height: 44px;
+      font-size: 16px;
+      font-weight: 500;
+      color: #12220e;
+      margin-bottom: 9px;
+      cursor: pointer;
+    }
+    .modal-btn:last-child { margin-bottom: 0; }
+
+    .qr-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 34px 24px 32px;
+    }
+    .qr-action-title {
+      font-size: 42px;
+      font-weight: 400;
+      color: #161606;
+      letter-spacing: 2px;
+      line-height: 1.15;
+    }
+    .qr-center-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .qr-box {
+      background: #ffffff;
+      padding: 8px;
+      border-radius: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #qrcode img, #qrcode canvas {
+      display: block;
+      width: 256px !important;
+      height: 256px !important;
+      image-rendering: pixelated;
+    }
+    .refresh-btn {
+      margin-top: 10px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 400;
+      color: #3a3a18;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .refresh-icon {
+      font-size: 24px;
+      font-weight: 800;
+      color: #111111;
+      line-height: 1;
+    }
+    .qr-meta {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 400;
+      color: #191907;
+      line-height: 1.5;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+
+  <section id="mainScreen" class="screen screenshot-screen active">
+    <button class="hotspot-menu" onclick="editID()" aria-label="設定身分證字號"></button>
+    <div class="clock-overlay" id="liveClock">115/10/31 12:47:44</div>
+    <button class="hotspot-label" onclick="openModal()" aria-label="開啟管制標籤選單"></button>
+  </section>
+
+  <div id="actionModal" class="modal-backdrop" onclick="closeModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-title">提示</div>
+      <div class="modal-sub">請選擇產生 QRCode 類型</div>
+      <button class="modal-btn" onclick="goQR('進入營區')">進入營區</button>
+      <button class="modal-btn" onclick="goQR('離開營區')">離開營區</button>
+      <button class="modal-btn" onclick="closeModal()">取 消</button>
+    </div>
+  </div>
+
+  <section id="qrScreen" class="screen yellow-screen">
+    <div class="topbar">
+      <button class="back-pill-btn" onclick="backMain()">‹ 返回</button>
+      <div>門禁 - QRCode</div>
+    </div>
+
+    <div class="qr-body">
+      <div class="qr-action-title" id="qrActionTitle">進入營區</div>
+
+      <div class="qr-center-stack">
+        <div class="qr-box">
+          <div id="qrcode"></div>
+        </div>
+        <button class="refresh-btn" onclick="refreshQR()">
+          <span class="refresh-icon">↻</span>
+          <span>更新 QRCode</span>
+        </button>
+      </div>
+
+      <div class="qr-meta">
+        <div>時間來源： 手機</div>
+        <div>來源時間：<span id="qrSourceTime">115/11/21 03:23:27</span></div>
+        <div>上鎖時間：<span id="qrLockTime">115/11/15 22:51:49</span></div>
+        <div>版本號：MDM 9.1 Build 1</div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    let userID = localStorage.getItem("custom_id") || "J123219819";
+    let currentAction = "進入營區";
+    let qrInstance = null;
+
+    function formatMinguo(date = new Date()) {
+      const rocYear = date.getFullYear() - 1911;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${rocYear}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function updateClock() {
+      document.getElementById("liveClock").textContent = formatMinguo(new Date());
+    }
+
+    function openModal() {
+      document.getElementById("actionModal").classList.add("open");
+    }
+
+    function closeModal() {
+      document.getElementById("actionModal").classList.remove("open");
+    }
+
+    function goQR(action) {
+      currentAction = action;
+      closeModal();
+      document.getElementById("qrActionTitle").textContent = action;
+      document.getElementById("mainScreen").classList.remove("active");
+      document.getElementById("qrScreen").classList.add("active");
+      refreshQR();
+    }
+
+    function backMain() {
+      document.getElementById("qrScreen").classList.remove("active");
+      document.getElementById("mainScreen").classList.add("active");
+    }
+
+    function drawFallbackMatrix(container, seedText) {
+      const size = 29;
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, 256, 256);
+
+      let hash = 2166136261;
+      for (let i = 0; i < seedText.length; i++) {
+        hash ^= seedText.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+
+      const cell = 256 / size;
+      const isFinder = (r, c) =>
+        (r < 7 && c < 7) || (r < 7 && c >= size - 7) || (r >= size - 7 && c < 7);
+
+      const drawFinder = (sr, sc) => {
+        for (let r = 0; r < 7; r++) {
+          for (let c = 0; c < 7; c++) {
+            const on = r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4);
+            ctx.fillStyle = on ? "#140d1f" : "#ffffff";
+            ctx.fillRect((sc + c) * cell, (sr + r) * cell, Math.ceil(cell), Math.ceil(cell));
+          }
+        }
+      };
+
+      drawFinder(0, 0);
+      drawFinder(0, size - 7);
+      drawFinder(size - 7, 0);
+
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (isFinder(r, c)) continue;
+          hash ^= r * 131 + c * 17 + seedText.charCodeAt((r + c) % seedText.length);
+          hash = Math.imul(hash, 16777619);
+          if ((hash >>> 0) % 100 < 48) {
+            ctx.fillStyle = "#140d1f";
+            ctx.fillRect(c * cell, r * cell, Math.ceil(cell), Math.ceil(cell));
+          }
+        }
+      }
+      container.innerHTML = "";
+      container.appendChild(canvas);
+    }
+
+    function refreshQR() {
+      const nowStr = formatMinguo(new Date());
+      document.getElementById("qrSourceTime").textContent = nowStr;
+      const actCode = currentAction === "離開營區" ? "OUT" : "IN";
+      const payload = `MDM9.1|CAMP=WUHAN|ACT=${actCode}|ID=${userID}|TS=${nowStr}|B=1`;
+      const container = document.getElementById("qrcode");
+      container.innerHTML = "";
+
+      try {
+        qrInstance = new QRCode(container, {
+          text: payload,
+          width: 256,
+          height: 256,
+          colorDark: "#140d1f",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+        setTimeout(() => {
+          const hasImg = container.querySelector("img") && container.querySelector("img").getAttribute("src");
+          const hasCanvas = container.querySelector("canvas");
+          if (!hasImg && !hasCanvas) {
+            drawFallbackMatrix(container, payload);
+          }
+        }, 60);
+      } catch (e) {
+        drawFallbackMatrix(container, payload);
+      }
+    }
+
+    function editID() {
+      const nextID = prompt("輸入要產生的身分證字號：", userID);
+      if (nextID && nextID.trim()) {
+        userID = nextID.trim().toUpperCase();
+        localStorage.setItem("custom_id", userID);
+      }
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
 
