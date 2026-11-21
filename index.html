@@ -171,13 +171,14 @@
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      padding: 34px 24px 32px;
+      padding: 26px 20px 28px;
     }
+    /* 放大「進入營區 / 離開營區」字體 */
     .qr-action-title {
-      font-size: 42px;
-      font-weight: 400;
+      font-size: 54px;
+      font-weight: 500;
       color: #161606;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
       line-height: 1.15;
     }
     .qr-center-stack {
@@ -187,23 +188,24 @@
     }
     .qr-box {
       background: #ffffff;
-      padding: 8px;
+      padding: 10px;
       border-radius: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
     }
+    /* 放大 QRCode 顯示尺寸 */
     #qrcode img, #qrcode canvas {
       display: block;
-      width: 256px !important;
-      height: 256px !important;
+      width: 300px !important;
+      height: 300px !important;
       image-rendering: pixelated;
     }
     .refresh-btn {
-      margin-top: 10px;
+      margin-top: 12px;
       background: none;
       border: none;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 400;
       color: #3a3a18;
       display: inline-flex;
@@ -212,7 +214,7 @@
       cursor: pointer;
     }
     .refresh-icon {
-      font-size: 24px;
+      font-size: 25px;
       font-weight: 800;
       color: #111111;
       line-height: 1;
@@ -313,11 +315,11 @@
     function drawFallbackMatrix(container, seedText) {
       const size = 29;
       const canvas = document.createElement("canvas");
-      canvas.width = 256;
-      canvas.height = 256;
+      canvas.width = 300;
+      canvas.height = 300;
       const ctx = canvas.getContext("2d");
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, 256, 256);
+      ctx.fillRect(0, 0, 300, 300);
 
       let hash = 2166136261;
       for (let i = 0; i < seedText.length; i++) {
@@ -325,7 +327,7 @@
         hash = Math.imul(hash, 16777619);
       }
 
-      const cell = 256 / size;
+      const cell = 300 / size;
       const isFinder = (r, c) =>
         (r < 7 && c < 7) || (r < 7 && c >= size - 7) || (r >= size - 7 && c < 7);
 
@@ -369,8 +371,8 @@
       try {
         qrInstance = new QRCode(container, {
           text: payload,
-          width: 256,
-          height: 256,
+          width: 300,
+          height: 300,
           colorDark: "#140d1f",
           colorLight: "#ffffff",
           correctLevel: QRCode.CorrectLevel.M
@@ -400,4 +402,3 @@
   </script>
 </body>
 </html>
-
